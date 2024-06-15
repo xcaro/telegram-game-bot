@@ -12,5 +12,7 @@ class Settings(BaseSettings):
 
     PLAY_GAME: bool = False
 
+    SEND_CLAIM_AFTER: int = 0
+
 
 settings = Settings()

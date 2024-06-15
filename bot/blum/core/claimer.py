@@ -39,60 +39,51 @@ class Claimer:
         async with aiohttp.ClientSession(headers=session_headers) as http_client:
             while True:
                 try:
-                    if time() - access_token_created_time >= 3600:
-                        access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
+                    # if time() - access_token_created_time >= 3600:
+                    access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
 
-                        if not access_token:
-                            continue
+                    if not access_token:
+                        await asyncio.sleep(delay=60)
+                        continue
 
-                        http_client.headers["Authorization"] = f"Bearer {access_token}"
-                        access_token_created_time = time()
+                    http_client.headers["Authorization"] = f"Bearer {access_token}"
+                    # access_token_created_time = time()
 
-                        # daily_reward = await self.get_daily_reward(http_client=http_client)
-                        # print(daily_reward)
-
-                        profile_balance = await self.get_profile_balance(http_client=http_client)
-
-                        # print(profile_balance)
-                        farming_data = profile_balance.get('farming', None)
-                        game_tickets = profile_balance['playPasses']
-                        available_balance = profile_balance["availableBalance"]
-
-                        if farming_data:
-                            is_farming = True
-
-                            logger.info(f"{self.session_name} | Have a farming process")
-
-                            earnings_rate = farming_data['earningsRate']
-                            start_farming_time = int(str(farming_data['startTime'])[:-3])
-                            claim_time = int(str(farming_data['endTime'])[:-3])
-
-                            start_farming_date = datetime.fromtimestamp(start_farming_time).strftime(
-                                '%Y-%m-%d %H:%M:%S')
-                            end_farming_date = datetime.fromtimestamp(claim_time).strftime('%Y-%m-%d %H:%M:%S')
-
-                            logger.info(f"{self.session_name} | Start farming at: <c>{start_farming_date}</c>")
-                            logger.info(f"{self.session_name} | Claim at: <c>{end_farming_date}</c>")
-                            logger.info(f"{self.session_name} | Farm speed: <m>{earnings_rate}</m>")
-                        else:
-                            logger.info(f"{self.session_name} | No farming process")
-
-                        logger.info(f"{self.session_name} | Available balance: <e>{available_balance}</e>")
-                        logger.info(f"{self.session_name} | Available ticket: <g>{game_tickets}</g>")
+                    # daily_reward = await self.get_daily_reward(http_client=http_client)
+                    # print(daily_reward)
 
                     profile_balance = await self.get_profile_balance(http_client=http_client)
 
                     # print(profile_balance)
-
+                    farming_data = profile_balance.get('farming', None)
+                    game_tickets = profile_balance['playPasses']
                     available_balance = profile_balance["availableBalance"]
 
-                    farming_data = profile_balance.get('farming', None)
                     if farming_data:
                         is_farming = True
+
+                        logger.info(f"{self.session_name} | Have a farming process")
+
+                        earnings_rate = farming_data['earningsRate']
+                        start_farming_time = int(str(farming_data['startTime'])[:-3])
+                        claim_time = int(str(farming_data['endTime'])[:-3])
                         earning_balance = farming_data['balance']
 
-                        logger.info(f"{self.session_name} | Farming: <g>+{earning_balance}</g> | "
-                                    f"Total: <e>{available_balance}</e>")
+                        start_farming_date = datetime.fromtimestamp(start_farming_time).strftime(
+                            '%Y-%m-%d %H:%M:%S')
+                        end_farming_date = datetime.fromtimestamp(claim_time).strftime('%Y-%m-%d %H:%M:%S')
+
+                        logger.info(f"{self.session_name} | Start farming at: <c>{start_farming_date}</c> | "
+                                    f"Claim at: <c>{end_farming_date}</c>")
+                        logger.info(
+                            f"{self.session_name} | Farming: <g>+{earning_balance}</g> | Speed: <m>{earnings_rate}</m>")
+                    else:
+                        logger.info(f"{self.session_name} | No farming process")
+
+                    logger.info(f"{self.session_name} | Available Balance: <e>{available_balance}</e> | "
+                                f"Game ticket: <g>{game_tickets}</g>")
+
+                    # profile_balance = await self.get_profile_balance(http_client=http_client)
 
                     daily_reward = await self.get_daily_reward(http_client=http_client)
                     if daily_reward:
@@ -103,18 +94,18 @@ class Claimer:
                         else:
                             logger.error(f"{self.session_name} | "
                                          f"Failed to claim daily reward, try again in a few minutes")
+                    else:
+                        logger.error(f"{self.session_name} | Cannot claim reward today")
 
                     if time() > claim_time and is_farming:
                         retry = 0
                         logger.info(f"{self.session_name} | Claim is ready, sleep 3s before claim")
                         await asyncio.sleep(delay=3)
                         while retry <= settings.CLAIM_RETRY:
-
                             farming_data = await self.send_claim(http_client=http_client)
                             if farming_data:
-                                new_balance = farming_data['balance']
-                                logger.success(f"{self.session_name} | Successful claim! | "
-                                               f"Account Balance: <c>{new_balance:,}</c>")
+                                # new_balance = farming_data['balance']
+                                logger.success(f"{self.session_name} | Successful claim!")
                                 is_farming = False
                                 break
 
@@ -166,7 +157,7 @@ class Claimer:
                                     logger.info(f"{self.session_name} | Game already finished")
                                     continue_playing = False
                                 elif claim_response['message'] == 'Token is invalid':
-                                    continue_playing = False
+                                    break
                                     # TODO: check logic
                                     # access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
                                     # http_client.headers["Authorization"] = f"Bearer {access_token}"
@@ -174,8 +165,8 @@ class Claimer:
                                     logger.info(f"{self.session_name} | Game finished")
                                     continue_playing = False
 
-                    logger.info(f"{self.session_name} | sleep 1 hour")
-                    await asyncio.sleep(delay=3600)
+                    logger.info(f"{self.session_name} | sleep 2 hour")
+                    await asyncio.sleep(delay=3600 * 2)
 
                 except InvalidSession as error:
                     raise error
@@ -262,23 +253,19 @@ class Claimer:
                 await asyncio.sleep(delay=3)
 
     async def get_daily_reward(self, http_client: aiohttp.ClientSession):
-        while True:
-            try:
-                response = await http_client.post(url='https://game-domain.blum.codes/api/v1/daily-reward?offset=-420',
-                                                  json={})
-                response.raise_for_status()
+        try:
+            response = await http_client.post(url='https://game-domain.blum.codes/api/v1/daily-reward?offset=-420')
 
-                response_json = await response.json()
+            response_json = await response.json()
 
-                return response_json
-            except Exception as error:
-                logger.error(f"{self.session_name} | Unknown error while getting Daily Reward: {error}")
-                await asyncio.sleep(delay=3)
+            return response_json
+        except Exception as error:
+            logger.error(f"{self.session_name} | Unknown error while getting Daily Reward: {error}")
+            await asyncio.sleep(delay=3)
 
     async def send_claim(self, http_client: aiohttp.ClientSession):
         try:
             response = await http_client.post(url='https://game-domain.blum.codes/api/v1/farming/claim')
-            response.raise_for_status()
 
             response_json = await response.json()
 
@@ -293,6 +280,7 @@ class Claimer:
             response.raise_for_status()
 
             response_json = await response.json()
+            print(response_json)
 
             return response_json
         except Exception as error:
