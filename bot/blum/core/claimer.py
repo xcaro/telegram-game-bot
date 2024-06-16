@@ -1,20 +1,19 @@
 import asyncio
 import json
-import heapq
-import sys
+import aiohttp
 from time import time
 from datetime import datetime
 from urllib.parse import unquote
 
-import aiohttp
 from pyrogram import Client
 from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered
 from pyrogram.raw.functions.messages import RequestWebView
 
 from exceptions import InvalidSession
-from bot.blum.headers import session_headers, daily_claim_headers
+from core import BaseClaimer
 from utils import logger
-from bot.blum.config import settings
+from ..headers import session_headers
+from ..config import settings
 
 
 async def run_claimer(tg_client: Client):
@@ -24,10 +23,9 @@ async def run_claimer(tg_client: Client):
         logger.error(f"{tg_client.name} | Invalid Session")
 
 
-class Claimer:
-    def __init__(self, tg_client: Client):
-        self.session_name = tg_client.name
-        self.tg_client = tg_client
+class Claimer(BaseClaimer):
+    peer_name = 'BlumCryptoBot'
+    bot_url = 'https://telegram.blum.codes/'
 
     async def run(self) -> None:
         access_token_created_time = 0
@@ -101,7 +99,7 @@ class Claimer:
                         retry = 0
                         logger.info(f"{self.session_name} | Claim is ready, sleep 3s before claim")
                         await asyncio.sleep(delay=3)
-                        while retry <= settings.CLAIM_RETRY:
+                        while retry <= settings.BLUM_CLAIM_RETRY:
                             farming_data = await self.send_claim(http_client=http_client)
                             if farming_data:
                                 # new_balance = farming_data['balance']
@@ -109,7 +107,8 @@ class Claimer:
                                 is_farming = False
                                 break
 
-                            logger.info(f"{self.session_name} | Retry <y>{retry}</y> of <e>{settings.CLAIM_RETRY}</e>")
+                            logger.info(
+                                f"{self.session_name} | Retry <y>{retry}</y> of <e>{settings.BLUM_CLAIM_RETRY}</e>")
                             retry += 1
 
                     if not is_farming or not farming_data:
@@ -134,7 +133,7 @@ class Claimer:
                         else:
                             logger.error(f"{self.session_name} | Starting error</c>")
 
-                    if game_tickets > 0 and settings.PLAY_GAME:
+                    if game_tickets > 0 and settings.BLUM_PLAY_GAME:
                         logger.info(f"{self.session_name} | "
                                     f"Game play after 3 second")
                         await asyncio.sleep(delay=3)
@@ -189,37 +188,6 @@ class Claimer:
             return access_token
         except Exception as error:
             logger.error(f"{self.session_name} | Unknown error while getting Access Token: {error}")
-            await asyncio.sleep(delay=3)
-
-    async def get_tg_web_data(self):
-        try:
-            if not self.tg_client.is_connected:
-                try:
-                    await self.tg_client.connect()
-                except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
-                    raise InvalidSession(self.session_name)
-
-            peer = await self.tg_client.resolve_peer('BlumCryptoBot')
-            web_view = await self.tg_client.invoke(RequestWebView(
-                peer=peer,
-                bot=peer,
-                platform='android',
-                from_bot_menu=False,
-                url='https://telegram.blum.codes'
-            ))
-
-            auth_url = web_view.url
-            tg_web_data = unquote(
-                string=unquote(
-                    string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
-
-            if self.tg_client.is_connected:
-                await self.tg_client.disconnect()
-
-            return tg_web_data
-
-        except Exception as error:
-            logger.error(f"{self.session_name} | Unknown error during Authorization: {error}")
             await asyncio.sleep(delay=3)
 
     async def get_profile_data(self, http_client: aiohttp.ClientSession):
