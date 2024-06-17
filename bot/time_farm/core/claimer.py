@@ -25,9 +25,6 @@ class Claimer(BaseClaimer):
 
     async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str):
         try:
-            payload = "query_id=AAEL4vl5AAAAAAvi-XmTXUTp&user=%7B%22id%22%3A2046419467%2C%22first_name%22%3A%22Nhan%22%2C%22last_name%22%3A%22Vo%22%2C%22username%22%3A%22nhnvo%22%2C%22language_code%22%3A%22en%22%2C%22is_premium%22%3Atrue%2C%22allows_write_to_pm%22%3Atrue%7D&auth_date=1718562757&hash=00710ccbfb546bf27221cd7edffc7802abc28dcf4875db267209fa728bed1b46"
-            print((tg_web_data))
-            # print(payload)
             response = await http_client.post(url='https://tg-bot-tap.laborx.io/api/v1/auth/validate-init',
                                               data=tg_web_data)
             # return
@@ -51,7 +48,7 @@ class Claimer(BaseClaimer):
         async with aiohttp.ClientSession(headers=session_headers) as http_client:
             while True:
                 access_token, account_info = await self.login(http_client=http_client, tg_web_data=tg_web_data)
-                break
+
                 if not access_token:
                     await asyncio.sleep(delay=3)
                     continue
