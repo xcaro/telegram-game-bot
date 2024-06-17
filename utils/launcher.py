@@ -5,9 +5,9 @@ import argparse
 
 from pyrogram import Client
 
-from bot.blum.core import run_claimer
+from bot.time_farm.core import run_claimer
 from utils import logger
-from bot.blum.config import settings
+from configs import settings
 from utils.registrator import register_sessions
 
 start_text = """

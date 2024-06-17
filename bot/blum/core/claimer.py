@@ -174,7 +174,7 @@ class Claimer(BaseClaimer):
                     logger.error(f"{self.session_name} | Unknown error: {error}")
                     await asyncio.sleep(delay=3)
 
-    async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str) -> str:
+    async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str):
         try:
             response = await http_client.post(url='https://gateway.blum.codes/v1/auth/provider'
                                                   '/PROVIDER_TELEGRAM_MINI_APP',

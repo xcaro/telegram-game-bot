@@ -18,10 +18,14 @@ class BaseClaimer:
 
     def __init__(self, tg_client: Client):
         self.tg_client = tg_client
-        self.session_name = tg_client.name
+        self.session_name = tg_client.name + " | " + self.peer_name
 
     @abstractmethod
     async def run(self) -> None:
+        pass
+
+    @abstractmethod
+    async def login(self, http_client: aiohttp.ClientSession, tg_web_data: str):
         pass
 
     async def get_tg_web_data(self):
