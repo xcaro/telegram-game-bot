@@ -33,30 +33,3 @@ class BaseGame:
                 string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
         return tg_web_data
 
-    # async def get_tg_web_data(self):
-    #     try:
-    #         if not self.tg_client.is_connected:
-    #             try:
-    #                 await self.tg_client.connect()
-    #             except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
-    #                 raise InvalidSession(self.session_name)
-    #
-    #         peer = await self.tg_client.resolve_peer(self.peer_name)
-    #         web_view = await self.tg_client.invoke(RequestWebView(
-    #             peer=peer,
-    #             bot=peer,
-    #             platform='android',
-    #             from_bot_menu=False,
-    #             url=self.bot_url
-    #         ))
-    #
-    #         auth_url = web_view.url
-    #         tg_web_data = unquote(
-    #             string=unquote(
-    #                 string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
-    #
-    #         return tg_web_data
-    #
-    #     except Exception as error:
-    #         logger.error(f"{self.session_name} | {self.peer_name} | Unknown error during Authorization: {error}")
-    #         await asyncio.sleep(delay=3)

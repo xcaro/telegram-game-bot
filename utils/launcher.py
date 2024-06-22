@@ -108,7 +108,6 @@ async def get_tasks_by_client(tg_client, classes: [BaseGame]):
             ))
 
             auth_url = web_view.url
-            print(auth_url)
             tasks.append(asyncio.create_task(cls(tg_client=tg_client, web_view_url=auth_url).run()))
 
         except Exception as error:

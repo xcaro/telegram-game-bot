@@ -44,7 +44,6 @@ class TimeFarmClaimer(BaseGame):
 
     async def run(self) -> None:
         tg_web_data = await self.get_tg_web_data()
-        print(tg_web_data)
         available = False
 
         async with aiohttp.ClientSession(headers=session_headers) as http_client:
