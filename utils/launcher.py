@@ -2,13 +2,16 @@ import os
 import glob
 import asyncio
 import argparse
+import inspect
+import importlib
 
-from pyrogram import Client
-
-from bot.blum.core import run_claimer
 from utils import logger
 from configs import settings
 from utils.registrator import register_sessions
+from pyrogram import Client
+from pyrogram.raw.functions.messages import RequestWebView
+
+from core import BaseGame
 
 start_text = """
 Select an action:
@@ -75,8 +78,54 @@ async def process() -> None:
         await run_tasks(tg_clients=tg_clients)
 
 
+def get_child_class_names(base_class):
+    child_class_names = []
+    for subclass in base_class.__subclasses__():
+        module = importlib.import_module(subclass.__module__)
+        cls = getattr(module, subclass.__name__)
+        child_class_names.append(cls)
+    return child_class_names
+
+
+async def get_tasks_by_client(tg_client, classes: [BaseGame]):
+    tasks = []
+    if not tg_client.is_connected:
+        await tg_client.connect()
+
+    for cls in classes:
+        peer_name = cls.peer_name
+        bot_url = cls.bot_url
+        session_name = tg_client.name + " | " + peer_name
+        try:
+
+            peer = await tg_client.resolve_peer(peer_name)
+            web_view = await tg_client.invoke(RequestWebView(
+                peer=peer,
+                bot=peer,
+                platform='android',
+                from_bot_menu=False,
+                url=bot_url
+            ))
+
+            auth_url = web_view.url
+            print(auth_url)
+            tasks.append(asyncio.create_task(cls(tg_client=tg_client, web_view_url=auth_url).run()))
+
+        except Exception as error:
+            logger.error(f"{session_name} | {peer_name} | Unknown error during Authorization: {error}")
+            await asyncio.sleep(delay=3)
+
+    if tg_client.is_connected:
+        await tg_client.disconnect()
+
+    return tasks
+
+
 async def run_tasks(tg_clients: list[Client]):
-    tasks = [asyncio.create_task(run_claimer(tg_client=tg_client))
-             for tg_client in tg_clients]
+    tasks = []
+    classes = get_child_class_names(BaseGame)
+
+    for tg_client in tg_clients:
+        tasks.extend(await get_tasks_by_client(tg_client, classes=classes))
 
     await asyncio.gather(*tasks)

@@ -1,1 +1,1 @@
-from .base_claimer import BaseClaimer
+from .base_game import BaseGame

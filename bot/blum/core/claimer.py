@@ -3,27 +3,15 @@ import json
 import aiohttp
 from time import time
 from datetime import datetime
-from urllib.parse import unquote
-
-from pyrogram import Client
-from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered
-from pyrogram.raw.functions.messages import RequestWebView
 
 from exceptions import InvalidSession
-from core import BaseClaimer
+from core import BaseGame
 from utils import logger
 from ..headers import session_headers
 from ..config import settings
 
 
-async def run_claimer(tg_client: Client):
-    try:
-        await Claimer(tg_client=tg_client).run()
-    except InvalidSession:
-        logger.error(f"{tg_client.name} | Invalid Session")
-
-
-class Claimer(BaseClaimer):
+class BlumClaimer(BaseGame):
     peer_name = 'BlumCryptoBot'
     bot_url = 'https://telegram.blum.codes/'
 

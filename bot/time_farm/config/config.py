@@ -4,10 +4,13 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class TimeFarmSettings(BaseSettings):
     model_config = SettingsConfigDict(env_file="../.env", env_ignore_empty=True)
 
-    TF_CLAIM_RETRY: int = 3
-    TF_SLEEP_BETWEEN_CLAIM: int = 180
+    CLAIM_RETRY: int = 1
+    SLEEP_BETWEEN_CLAIM: int = 240
 
-    # SEND_CLAIM_AFTER: int = 0
+    AUTO_UPGRADE_FARM: bool = True
+    MAX_UPGRADE_LEVEL: int = 3
+
+    USE_PROXY_FROM_FILE: bool = False
 
 
 settings = TimeFarmSettings()
