@@ -123,7 +123,6 @@ async def get_tasks_by_client(tg_client, classes: [BaseGame]):
 async def run_tasks(tg_clients: list[Client]):
     tasks = []
     classes = get_child_class_names(BaseGame)
-
     for tg_client in tg_clients:
         tasks.extend(await get_tasks_by_client(tg_client, classes=classes))
 

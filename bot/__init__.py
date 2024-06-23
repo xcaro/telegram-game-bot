@@ -1,2 +1,3 @@
-from .blum.core import claimer as blum_claimer
-from .time_farm.core import claimer as time_farm_claimer
+from .blum.core import claimer
+from .time_farm.core import claimer
+from .cubes.core import tapper

@@ -1,5 +1,5 @@
 from typing import Dict, Any
-
+from datetime import datetime, timezone, timedelta
 import aiohttp
 import asyncio
 
@@ -163,18 +163,21 @@ class TimeFarmClaimer(BaseGame):
 
                                             await asyncio.sleep(delay=1)
 
+                    start_farm_at = mining_data['activeFarmingStartedAt']
+                    start_farm_at = datetime.strptime(start_farm_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+                    start_farm_at = start_farm_at.replace(tzinfo=timezone.utc)
+                    end_farm_at = start_farm_at + timedelta(seconds=farmingDurationInSec)
+                    sleep_duration = end_farm_at.timestamp() - datetime.now(timezone.utc).timestamp()
+                    sleep_time = end_farm_at.astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')
+                    logger.info(f"{self.session_name} | sleep to <r>{sleep_time}</r>")
+                    await asyncio.sleep(delay=sleep_duration)
+
                 except InvalidSession as error:
                     raise error
 
                 except Exception as error:
                     logger.error(f"{self.session_name} | Unknown error: {error}")
                     await asyncio.sleep(delay=3)
-
-                else:
-                    logger.info(f"Sleep 1min")
-                    await asyncio.sleep(delay=60)
-
-                await asyncio.sleep(delay=3600)
 
     async def get_mining_data(self, http_client: aiohttp.ClientSession):
         try:

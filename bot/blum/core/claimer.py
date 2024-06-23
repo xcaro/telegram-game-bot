@@ -16,7 +16,6 @@ class BlumClaimer(BaseGame):
     bot_url = 'https://telegram.blum.codes/'
 
     async def run(self) -> None:
-        access_token_created_time = 0
         claim_time = 0
         is_farming = False
 
@@ -44,6 +43,7 @@ class BlumClaimer(BaseGame):
                     farming_data = profile_balance.get('farming', None)
                     game_tickets = profile_balance['playPasses']
                     available_balance = profile_balance["availableBalance"]
+                    sleep_duration = 60
 
                     if farming_data:
                         is_farming = True
@@ -54,6 +54,7 @@ class BlumClaimer(BaseGame):
                         start_farming_time = int(str(farming_data['startTime'])[:-3])
                         claim_time = int(str(farming_data['endTime'])[:-3])
                         earning_balance = farming_data['balance']
+                        sleep_duration = claim_time - time()
 
                         start_farming_date = datetime.fromtimestamp(start_farming_time).strftime(
                             '%Y-%m-%d %H:%M:%S')
@@ -112,6 +113,8 @@ class BlumClaimer(BaseGame):
                             claim_time = datetime.fromtimestamp(
                                 int(str(farm_response['endTime'])[:-3])).strftime('%Y-%m-%d %H:%M:%S')
 
+                            sleep_duration = int(str(farm_response['endTime'])[:-3]) - time()
+
                             logger.success(f"{self.session_name} | "
                                            f"Successfully start farming at: <c>{start_farming_date}</c>")
                             logger.success(f"{self.session_name} | "
@@ -152,8 +155,11 @@ class BlumClaimer(BaseGame):
                                     logger.info(f"{self.session_name} | Game finished")
                                     continue_playing = False
 
-                    logger.info(f"{self.session_name} | sleep 2 hour")
-                    await asyncio.sleep(delay=3600 * 2)
+                    sleep_time = sleep_duration + time()
+                    sleep_time = datetime.fromtimestamp(sleep_time).strftime('%Y-%m-%d %H:%M:%S')
+                    logger.info(f"{self.session_name} | sleep to: <r>{sleep_time}</r>")
+
+                    await asyncio.sleep(delay=sleep_duration)
 
                 except InvalidSession as error:
                     raise error

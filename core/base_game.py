@@ -14,7 +14,7 @@ class BaseGame:
 
     def __init__(self, tg_client: Client, web_view_url: str):
         self.tg_client = tg_client
-        self.session_name = tg_client.name + " | " + self.peer_name
+        self.session_name = tg_client.name + " | <y>" + self.peer_name + "</y>"
 
         self.web_view_url = web_view_url
 
