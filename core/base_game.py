@@ -4,6 +4,7 @@ import aiohttp
 
 from urllib.parse import unquote
 from pyrogram import Client
+from pyrogram import types
 
 
 class BaseGame:
@@ -11,12 +12,14 @@ class BaseGame:
     bot_url: str
     web_view_url: str
     session_name: str
+    me: types.User
 
-    def __init__(self, tg_client: Client, web_view_url: str):
+    def __init__(self, tg_client: Client, web_view_url: str, me):
         self.tg_client = tg_client
         self.session_name = tg_client.name + " | <y>" + self.peer_name + "</y>"
 
         self.web_view_url = web_view_url
+        self.me = me
 
     @abstractmethod
     async def run(self) -> None:
@@ -32,4 +35,3 @@ class BaseGame:
             string=unquote(
                 string=auth_url.split('tgWebAppData=', maxsplit=1)[1].split('&tgWebAppVersion', maxsplit=1)[0]))
         return tg_web_data
-

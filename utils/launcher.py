@@ -107,8 +107,10 @@ async def get_tasks_by_client(tg_client, classes: [BaseGame]):
                 url=bot_url
             ))
 
+            me = await tg_client.get_me()
+
             auth_url = web_view.url
-            tasks.append(asyncio.create_task(cls(tg_client=tg_client, web_view_url=auth_url).run()))
+            tasks.append(asyncio.create_task(cls(tg_client=tg_client, web_view_url=auth_url, me=me).run()))
 
         except Exception as error:
             logger.error(f"{session_name} | {peer_name} | Unknown error during Authorization: {error}")

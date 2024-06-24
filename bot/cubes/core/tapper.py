@@ -51,14 +51,6 @@ class CubesTapper(BaseGame):
             logger.error(f"Get tg, x request error happened: {error}")
             return None
 
-    async def join_to_pool(self, http_client: aiohttp.ClientSession, token: str):
-        try:
-            async with http_client.post(url='https://server.questioncube.xyz/pools/542/join',
-                                        json={'token': token}) as response:
-                response_text = await response.text()
-        except Exception as error:
-            logger.error(f"Join request error happened: {error}")
-
     async def mine(self, http_client: aiohttp.ClientSession, token: str):
         try:
             async with http_client.post(url='https://server.questioncube.xyz/game/mined',
@@ -105,14 +97,6 @@ class CubesTapper(BaseGame):
             logger.error(f"Claim request error happened: {error}")
             return None
 
-    async def check_proxy(self, http_client: aiohttp.ClientSession, proxy: Proxy) -> None:
-        try:
-            response = await http_client.get(url='https://httpbin.org/ip', timeout=aiohttp.ClientTimeout(5))
-            ip = (await response.json()).get('origin')
-            logger.info(f"{self.session_name} | Proxy IP: {ip}")
-        except Exception as error:
-            logger.error(f"{self.session_name} | Proxy: {proxy} | Error: {error}")
-
     async def run(self) -> None:
         while True:
             bad_request_count = 0
@@ -141,10 +125,6 @@ class CubesTapper(BaseGame):
             if app_user_data is not None:
 
                 logger.info(f"{self.session_name} | Authorized")
-
-                if app_user_data.get('pool_id') != '542':
-                    await self.join_to_pool(http_client=http_client, token=app_user_data.get('token'))
-                    logger.success(f"{self.session_name} | Joined channel pool for better rewards")
 
                 if app_user_data.get('banned_until_restore') == 'true':
                     logger.warning(f"{self.session_name} | "
@@ -191,8 +171,8 @@ class CubesTapper(BaseGame):
 
                         if mine_data == 'not enough':
                             logger.warning(f'{self.session_name} | Not enough energy to mine block | '
-                                           f'Going sleep 60 sec')
-                            await asyncio.sleep(60)
+                                           f'Going sleep 30 min')
+                            await asyncio.sleep(60 * 30)
                             continue
 
                         elif mine_data is None:
@@ -213,17 +193,17 @@ class CubesTapper(BaseGame):
                                 except (Unauthorized, UserDeactivated, AuthKeyUnregistered):
                                     raise InvalidSession(self.session_name)
 
-                        elif mine_data is not None:
-                            if (len(mine_data.get('mystery_ids')) > 0 and
-                                    int(mine_data.get('mystery_ids')[0]) == int(mine_data.get('mined_count'))):
-                                logger.info(f"{self.session_name} | Mined <magenta>mystery box</magenta>! | Drops: "
-                                            f"{mine_data.get('drops_amount')}; Energy: {mine_data.get('energy')}; "
-                                            f"Boxes: {mine_data.get('boxes_amount')}")
-                            else:
-                                logger.info(f"{self.session_name} | Mined! | Drops: "
-                                            f"{mine_data.get('drops_amount')}; "
-                                            f"Energy: {mine_data.get('energy')}; Boxes: "
-                                            f"{mine_data.get('boxes_amount')}")
+                        # elif mine_data is not None:
+                        #     if (len(mine_data.get('mystery_ids')) > 0 and
+                        #             int(mine_data.get('mystery_ids')[0]) == int(mine_data.get('mined_count'))):
+                        #         logger.info(f"{self.session_name} | Mined <magenta>mystery box</magenta>! | Drops: "
+                        #                     f"{mine_data.get('drops_amount')}; Energy: {mine_data.get('energy')}; "
+                        #                     f"Boxes: {mine_data.get('boxes_amount')}")
+                        #     else:
+                        #         logger.info(f"{self.session_name} | Mined! | Drops: "
+                        #                     f"{mine_data.get('drops_amount')}; "
+                        #                     f"Energy: {mine_data.get('energy')}; Boxes: "
+                        #                     f"{mine_data.get('boxes_amount')}")
 
                         sleep_between_mines = choice(mining_delay)
                         await asyncio.sleep(sleep_between_mines)
