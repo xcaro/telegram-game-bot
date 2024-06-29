@@ -9,10 +9,10 @@ from better_proxy import Proxy
 from pyrogram import Client
 from pyrogram.errors import Unauthorized, UserDeactivated, AuthKeyUnregistered, FloodWait
 
-from .agents import generate_random_user_agent
 from ..config import settings
 from .headers import headers
 
+from utils import generate_random_user_agent
 from core import BaseGame
 from utils import logger
 from exceptions import InvalidSession
@@ -171,8 +171,8 @@ class CubesTapper(BaseGame):
 
                         if mine_data == 'not enough':
                             logger.warning(f'{self.session_name} | Not enough energy to mine block | '
-                                           f'Going sleep 30 min')
-                            await asyncio.sleep(60 * 30)
+                                           f'Going sleep 10 min')
+                            await asyncio.sleep(60 * 10)
                             continue
 
                         elif mine_data is None:
