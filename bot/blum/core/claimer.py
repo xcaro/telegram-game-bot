@@ -3,6 +3,7 @@ import json
 import aiohttp
 from time import time
 from datetime import datetime
+from random import randint
 
 from exceptions import InvalidSession
 from core import BaseGame
@@ -124,36 +125,48 @@ class BlumClaimer(BaseGame):
                         else:
                             logger.error(f"{self.session_name} | Starting error</c>")
 
-                    if game_tickets > 0 and settings.BLUM_PLAY_GAME:
-                        logger.info(f"{self.session_name} | "
-                                    f"Game play after 3 second")
-                        await asyncio.sleep(delay=3)
+                    if settings.BLUM_PLAY_GAME:
+                        game_count = 0
+                        while game_tickets > 0 and game_count < 5:
+                            logger.info(f"{self.session_name} | "
+                                        f"Game play after 3 seconds")
+                            await asyncio.sleep(delay=3)
 
-                        game_data = await self.trigger_to_play_game(http_client=http_client)
+                            game_data = await self.trigger_to_play_game(http_client=http_client)
 
-                        if game_data:
-                            continue_playing = True
-                            logger.info(f"{self.session_name} | Game started")
-                            while continue_playing:
-                                claim_response = await self.claim_playing_game(http_client=http_client,
-                                                                               game_id=game_data['gameId'], points=2000)
-                                if claim_response['message'] == 'game session not finished':
-                                    logger.info(f"{self.session_name} | Game not finished")
-                                    continue
-                                elif claim_response is None:
-                                    logger.info(f"{self.session_name} | Cannot claim game points, Try again later")
-                                    continue_playing = False
-                                elif claim_response['message'] == 'game session not found':
-                                    logger.info(f"{self.session_name} | Game already finished")
-                                    continue_playing = False
-                                elif claim_response['message'] == 'Token is invalid':
-                                    break
-                                    # TODO: check logic
-                                    # access_token = await self.login(http_client=http_client, tg_web_data=tg_web_data)
-                                    # http_client.headers["Authorization"] = f"Bearer {access_token}"
-                                else:
-                                    logger.info(f"{self.session_name} | Game finished")
-                                    continue_playing = False
+                            if game_data:
+                                game_count += 1
+                                logger.info(f"{self.session_name} | Playing game <y>{game_count}</y>")
+                                await asyncio.sleep(delay=25)
+                                previous_points = 0
+                                while True:
+                                    points = randint(255, 280)
+                                    if points > previous_points:
+                                        previous_points = points
+                                    claim_response = await self.claim_playing_game(http_client=http_client,
+                                                                                   game_id=game_data['gameId'],
+                                                                                   points=previous_points)
+                                    if claim_response == 'game session not finished':
+                                        await asyncio.sleep(delay=1)
+                                        continue
+                                    elif claim_response == 'OK':
+                                        logger.success(
+                                            f"{self.session_name} | Game finished | Balance <g>+{previous_points}</g>")
+                                        break
+                                    elif claim_response == 'Token is invalid':
+                                        access_token = await self.login(http_client=http_client,
+                                                                        tg_web_data=tg_web_data)
+                                        http_client.headers["Authorization"] = f"Bearer {access_token}"
+                                        session_headers["Authorization"] = f"Bearer {access_token}"
+                                        continue
+                                    else:
+                                        break
+
+                            profile_balance = await self.get_profile_balance(http_client=http_client)
+                            game_tickets = profile_balance['playPasses']
+                            available_balance = profile_balance["availableBalance"]
+                            logger.info(f"{self.session_name} | Available Balance: <e>{available_balance}</e> | "
+                                        f"Game ticket: <g>{game_tickets}</g>")
 
                     sleep_time = sleep_duration + time()
                     sleep_time = datetime.fromtimestamp(sleep_time).strftime('%Y-%m-%d %H:%M:%S')
@@ -261,15 +274,18 @@ class BlumClaimer(BaseGame):
             logger.error(f"{self.session_name} | Unknown error while playing game: {error}")
             await asyncio.sleep(delay=3)
 
-    async def claim_playing_game(self, http_client: aiohttp.ClientSession, game_id: int, points: int):
+    async def claim_playing_game(self, http_client: aiohttp.ClientSession, game_id, points: int):
         try:
             response = await http_client.post(url='https://game-domain.blum.codes/api/v1/game/claim',
-                                              json={"gameId": str(game_id), "points": str(points)})
-            response.raise_for_status()
+                                              json={"gameId": str(game_id), "points": points})
+            response_text = await response.text()
 
-            response_json = await response.json()
+            try:
+                response_json = json.loads(response_text)
+                return response_json.get("message")
+            except ValueError:
+                return response_text
 
-            return response_json
         except Exception as error:
             logger.error(f"{self.session_name} | Unknown error while getting game points: {error}")
             await asyncio.sleep(delay=3)

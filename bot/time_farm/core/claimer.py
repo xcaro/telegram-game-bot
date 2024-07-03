@@ -129,17 +129,16 @@ class TimeFarmClaimer(BaseGame):
                                 if new_balance == int(status['balance']):
                                     status_start = await self.start_mine(http_client=http_client)
                                     if status_start['ok'] and status_start['code'] == 200:
+                                        available = False
                                         logger.success(f"{self.session_name} | Successful claim | "
                                                        f"Balance: <c>{new_balance}</c> (<g>+{farmingReward}</g>)")
-                                        logger.info(f"Next claim in {settings.SLEEP_BETWEEN_CLAIM}min")
+                                        # logger.info(f"Next claim in {settings.SLEEP_BETWEEN_CLAIM}min")
                                         break
                             elif status['code'] == 403:
                                 break
 
                             logger.info(f"{self.session_name} | Retry <y>{retry}</y> of <e>{settings.CLAIM_RETRY}</e>")
                             retry += 1
-
-                    available = False
 
                     if settings.AUTO_UPGRADE_FARM is True and level_num < settings.MAX_UPGRADE_LEVEL:
                         next_level = level_num + 1
@@ -163,14 +162,15 @@ class TimeFarmClaimer(BaseGame):
 
                                             await asyncio.sleep(delay=1)
 
-                    start_farm_at = mining_data['activeFarmingStartedAt']
-                    start_farm_at = datetime.strptime(start_farm_at, "%Y-%m-%dT%H:%M:%S.%fZ")
-                    start_farm_at = start_farm_at.replace(tzinfo=timezone.utc)
-                    end_farm_at = start_farm_at + timedelta(seconds=farmingDurationInSec)
-                    sleep_duration = end_farm_at.timestamp() - datetime.now(timezone.utc).timestamp()
-                    sleep_time = end_farm_at.astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')
-                    logger.info(f"{self.session_name} | sleep to <r>{sleep_time}</r>")
-                    await asyncio.sleep(delay=sleep_duration)
+                    if available:
+                        start_farm_at = mining_data['activeFarmingStartedAt']
+                        start_farm_at = datetime.strptime(start_farm_at, "%Y-%m-%dT%H:%M:%S.%fZ")
+                        start_farm_at = start_farm_at.replace(tzinfo=timezone.utc)
+                        end_farm_at = start_farm_at + timedelta(seconds=farmingDurationInSec)
+                        sleep_duration = end_farm_at.timestamp() - datetime.now(timezone.utc).timestamp()
+                        sleep_time = end_farm_at.astimezone(timezone(timedelta(hours=7))).strftime('%Y-%m-%d %H:%M:%S')
+                        logger.info(f"{self.session_name} | sleep to <r>{sleep_time}</r>")
+                        await asyncio.sleep(delay=sleep_duration)
 
                 except InvalidSession as error:
                     raise error

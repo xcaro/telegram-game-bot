@@ -1,1 +1,1 @@
-from .base_config import settings
+from .global_config import settings

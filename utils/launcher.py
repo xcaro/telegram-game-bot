@@ -92,6 +92,8 @@ async def get_tasks_by_client(tg_client, classes: [BaseGame]):
     if not tg_client.is_connected:
         await tg_client.connect()
 
+    me = await tg_client.get_me()
+
     for cls in classes:
         peer_name = cls.peer_name
         bot_url = cls.bot_url
@@ -106,8 +108,6 @@ async def get_tasks_by_client(tg_client, classes: [BaseGame]):
                 from_bot_menu=False,
                 url=bot_url
             ))
-
-            me = await tg_client.get_me()
 
             auth_url = web_view.url
             tasks.append(asyncio.create_task(cls(tg_client=tg_client, web_view_url=auth_url, me=me).run()))
